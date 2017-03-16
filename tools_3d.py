@@ -191,22 +191,25 @@ def tiltaxisalign(im_series,tilt_angles,shift_and_tilt=('hold','hold')):
         shift_continue = 1
     
         while shift_continue == 1:
-            plt.imshow(iradon(np.rot90(new_series[:,midy,:]), theta = tilt_angles,output_size = series_shape[2]))
+            plt.imshow(iradon(np.rot90(new_series[:,midy,:]),  # rot
+            theta = tilt_angles,output_size = series_shape[2]))# anti-clokwise
             plt.show()
-            axis_shift = int(input('By how many pixels from the original mid-point should the tilt axis be shifted? '))
+            
+            axis_shift = float(input('By how many pixels from the original mid-point should the tilt axis be shifted? '))
+            
             for i in range(series_shape[0]):
-                new_series[i,:,:] = interpolation.shift(im_series.copy()[i,:,:],(0,axis_shift))
+                new_series[i,:,:] = interpolation.shift(im_series.copy()[i,:,:],(0,axis_shift)) # shift along np x-axis
                 
             shift_continue = int(input('Would you like to apply further image shifts (1 for yes, 0 for no)? '))
                 
     for i in range(series_shape[0]):
         final_series[i,:,:] = interpolation.shift(final_series[i,:,:],(0,axis_shift))
         
-    topy = int(series_shape[1]/4)
-    bottomy = int(3*series_shape[1]/4)
+    topy = int(3*series_shape[1]/8)
+    bottomy = int(5*series_shape[1]/8)
 
     if axis_tilt == 'hold':
-        tilt_series = new_series
+        tilt_series = final_series.copy()
         tilt_continue = 1
         while tilt_continue == 1:
             plt.imshow(iradon(np.rot90(new_series[:,topy,:]), theta = tilt_angles,output_size = series_shape[2]))
@@ -214,17 +217,15 @@ def tiltaxisalign(im_series,tilt_angles,shift_and_tilt=('hold','hold')):
             plt.imshow(iradon(np.rot90(new_series[:,bottomy,:]), theta = tilt_angles,output_size = series_shape[2]))
             plt.show()
             
-            axis_tilt = int(input('By what angle from the original y axis (in degrees) should the tilt axis be rotated? '))
+            axis_tilt = float(input('By what angle from the original y axis (in degrees) should the tilt axis be rotated? '))
             
-            if axis_tilt != 0:
-                for i in range(series_shape[0]):
-                    new_series[i,:,:] = interpolation.rotate(tilt_series.copy()[i,:,:],axis_tilt,reshape=False)
+            for i in range(series_shape[0]):
+                new_series[i,:,:] = interpolation.rotate(tilt_series.copy()[i,:,:],axis_tilt,reshape=False)
                     
             tilt_continue = int(input('Would you like to try another tilt angle (1 for yes, 0 for no)? '))
                     
-    if axis_tilt != 0:
-        for i in range(series_shape[0]):
-            final_series[i,:,:] = interpolation.rotate(final_series[i,:,:],axis_tilt,reshape=False)
+    for i in range(series_shape[0]):
+        final_series[i,:,:] = interpolation.rotate(final_series[i,:,:],axis_tilt,reshape=False)
             
     shift_and_tilt = (axis_shift,axis_tilt)
             
