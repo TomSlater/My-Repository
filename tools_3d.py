@@ -8,7 +8,7 @@ Created on Wed Sep 02 15:43:56 2015
 import numpy as np
 from skimage.transform import iradon, iradon_sart
 #import em_io
-import astra
+#import astra
 from skimage.feature import register_translation
 from scipy.ndimage import interpolation, filters
 import pylab as plt
@@ -28,27 +28,27 @@ def reconstruct(tilt_data,tilt_angles,algorithm='ASTRA_SIRT',iterations=20):
     
     #Reconstruction using Filtered/Weighted Backprojection from skimage (check how filtering is done)
     if algorithm == 'SKI_FBP' or 'SKI_WBP':
-        for y in xrange(0,y_size-1):
+        for y in range(0,y_size-1):
             recon[:,y,:] = iradon(np.rot90(tilt_data[:,y,:]), theta = tilt_angles,output_size = data_shape[2])
             
             #This is supposed to reorder axis to orientation for projection but not sure the x and y are correct
-            for y in xrange(0,y_size-1):
+            for y in range(0,y_size-1):
                 recon[:,y,:] = np.rot90(recon[:,y,:])
                 recon[:,y,:] = np.rot90(recon[:,y,:])
                 #recon[:,y,:] = np.rot90(recon[:,y,:])
             
     if algorithm == 'SKI_SART':
-        for y in xrange(0,y_size-1):
+        for y in range(0,y_size-1):
             recon[:,y,:] = iradon_sart(np.rot90(tilt_data[:,y,:]), theta = tilt_angles,clip=(0,np.max(tilt_data)))
             
         if iterations > 1:
-            for it in xrange(iterations-1):
+            for it in range(iterations-1):
                 print("Iteration number "+str(it+2)+" in progress.")
-                for y in xrange(0,y_size-1):
+                for y in range(0,y_size-1):
                     recon[:,y,:] = iradon_sart(np.rot90(tilt_data[:,y,:]), theta = tilt_angles,image=recon[:,y,:],clip=(0,np.max(tilt_data)))
                     
         #This is supposed to reorder axis to orientation for projection but not sure the x and y are correct
-        for y in xrange(0,y_size-1):
+        for y in range(0,y_size-1):
             recon[:,y,:] = np.rot90(recon[:,y,:])
             recon[:,y,:] = np.rot90(recon[:,y,:])
             #recon[:,y,:] = np.rot90(recon[:,y,:])
@@ -64,7 +64,7 @@ def reconstruct(tilt_data,tilt_angles,algorithm='ASTRA_SIRT',iterations=20):
     print("Reconstruction completed in {} seconds.".format(time.time() - t0))
             
     return(recon)
-    
+'''   
 def astrarecon(tilt_data,tilt_angles,iterations=1):
     proj_shape = np.shape(tilt_data)
     recon_shape = (proj_shape[2],proj_shape[2],proj_shape[1])
@@ -93,7 +93,7 @@ def astrarecon(tilt_data,tilt_angles,iterations=1):
     astra.data3d.delete(proj_id)
     
     return(rec)
-    
+'''    
 def project(reconstruction,angles):
     '''Function to project a reconstruction'''
     proj_list = []
@@ -120,23 +120,23 @@ def series_align(im_series,align_output=[],start='Mid',smooth=True,smooth_window
         
         filtered_series = []
         
-        for i in xrange(series_dim):
+        for i in range(series_dim):
             filtered_series.append(im_series[i].copy())
         
         align_output = []
         
         if smooth == True:
-            for i in xrange(series_dim):
+            for i in range(series_dim):
                 filtered_series[i] = filters.gaussian_filter(filtered_series[i],3)
         
         if sobel == True:
-            for i in xrange(series_dim):
+            for i in range(series_dim):
                 filtered_series[i] = filters.sobel(filtered_series[i])
         
         #Align from first image
         if start == 'First':
             align_output.append(register_translation(filtered_series[0], filtered_series[0],100))
-            for i in xrange(series_dim-1):
+            for i in range(series_dim-1):
                 align_output.append(register_translation(filtered_series[i], filtered_series[i+1],100))
                 align_output[i+1][0][0] = align_output[i+1][0][0] + align_output[i][0][0]
                 align_output[i+1][0][1] = align_output[i+1][0][1] + align_output[i][0][1]
@@ -152,14 +152,14 @@ def series_align(im_series,align_output=[],start='Mid',smooth=True,smooth_window
             
             align_output.append(register_translation(filtered_series[mid_point], filtered_series[mid_point], 100))
             
-            for i in xrange(mid_point,0,-1):
+            for i in range(mid_point,0,-1):
                 align_output.append(register_translation(filtered_series[i], filtered_series[i-1], 100))
                 align_output[mid_point-i+1][0][0] = align_output[mid_point-i+1][0][0] + align_output[mid_point-i][0][0]
                 align_output[mid_point-i+1][0][1] = align_output[mid_point-i+1][0][1] + align_output[mid_point-i][0][1]
                 
             align_output = list(reversed(align_output))
             
-            for i in xrange(mid_point,series_dim-1):
+            for i in range(mid_point,series_dim-1):
                 align_output.append(register_translation(filtered_series[i], filtered_series[i+1], 100))
                 align_output[i+1][0][0] = align_output[i+1][0][0] + align_output[i][0][0]
                 align_output[i+1][0][1] = align_output[i+1][0][1] + align_output[i][0][1]
@@ -191,22 +191,25 @@ def tiltaxisalign(im_series,tilt_angles,shift_and_tilt=('hold','hold')):
         shift_continue = 1
     
         while shift_continue == 1:
-            plt.imshow(iradon(np.rot90(new_series[:,midy,:]), theta = tilt_angles,output_size = series_shape[2]))
+            plt.imshow(iradon(np.rot90(new_series[:,midy,:]),  # rot
+            theta = tilt_angles,output_size = series_shape[2]))# anti-clokwise
             plt.show()
-            axis_shift = input('By how many pixels from the original mid-point should the tilt axis be shifted? ')
-            for i in xrange(series_shape[0]):
-                new_series[i,:,:] = interpolation.shift(im_series.copy()[i,:,:],(0,axis_shift))
+            
+            axis_shift = float(input('By how many pixels from the original mid-point should the tilt axis be shifted? '))
+            
+            for i in range(series_shape[0]):
+                new_series[i,:,:] = interpolation.shift(im_series.copy()[i,:,:],(0,axis_shift)) # shift along np x-axis
                 
-            shift_continue = input('Would you like to apply further image shifts (1 for yes, 0 for no)? ')
+            shift_continue = int(input('Would you like to apply further image shifts (1 for yes, 0 for no)? '))
                 
-    for i in xrange(series_shape[0]):
+    for i in range(series_shape[0]):
         final_series[i,:,:] = interpolation.shift(final_series[i,:,:],(0,axis_shift))
         
-    topy = int(series_shape[1]/4)
-    bottomy = int(3*series_shape[1]/4)
+    topy = int(3*series_shape[1]/8)
+    bottomy = int(5*series_shape[1]/8)
 
     if axis_tilt == 'hold':
-        tilt_series = new_series
+        tilt_series = final_series.copy()
         tilt_continue = 1
         while tilt_continue == 1:
             plt.imshow(iradon(np.rot90(new_series[:,topy,:]), theta = tilt_angles,output_size = series_shape[2]))
@@ -214,17 +217,15 @@ def tiltaxisalign(im_series,tilt_angles,shift_and_tilt=('hold','hold')):
             plt.imshow(iradon(np.rot90(new_series[:,bottomy,:]), theta = tilt_angles,output_size = series_shape[2]))
             plt.show()
             
-            axis_tilt = input('By what angle from the original y axis (in degrees) should the tilt axis be rotated? ')
+            axis_tilt = float(input('By what angle from the original y axis (in degrees) should the tilt axis be rotated? '))
             
-            if axis_tilt != 0:
-                for i in xrange(series_shape[0]):
-                    new_series[i,:,:] = interpolation.rotate(tilt_series.copy()[i,:,:],axis_tilt,reshape=False)
+            for i in range(series_shape[0]):
+                new_series[i,:,:] = interpolation.rotate(tilt_series.copy()[i,:,:],axis_tilt,reshape=False)
                     
-            tilt_continue = input('Would you like to try another tilt angle (1 for yes, 0 for no)? ')
+            tilt_continue = int(input('Would you like to try another tilt angle (1 for yes, 0 for no)? '))
                     
-    if axis_tilt != 0:
-        for i in xrange(series_shape[0]):
-            final_series[i,:,:] = interpolation.rotate(final_series[i,:,:],axis_tilt,reshape=False)
+    for i in range(series_shape[0]):
+        final_series[i,:,:] = interpolation.rotate(final_series[i,:,:],axis_tilt,reshape=False)
             
     shift_and_tilt = (axis_shift,axis_tilt)
             
